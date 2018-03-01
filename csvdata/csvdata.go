@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 )
 
 const HasHeader = true
@@ -32,7 +33,7 @@ func (c *CSV) ReadAll(csvr *csv.Reader, hasHeader bool) error {
 			return nil
 		}
 		if err != nil {
-			return fmt.Errorf("Got error while reading csv header: %s", err.Error)
+			return fmt.Errorf("Got error while reading csv header: %s", err.Error())
 		}
 		for i, v := range record {
 			if v == "" {
@@ -50,7 +51,7 @@ func (c *CSV) ReadAll(csvr *csv.Reader, hasHeader bool) error {
 			break
 		}
 		if err != nil {
-			return fmt.Errorf("Got error while reading a csv row: %s", err.Error)
+			return fmt.Errorf("Got error while reading a csv row: %s", err.Error())
 		}
 
 		// if we didn't set up a header, do it now
@@ -65,6 +66,69 @@ func (c *CSV) ReadAll(csvr *csv.Reader, hasHeader bool) error {
 			r[c.header[i]] = v
 		}
 		c.rows = append(c.rows, r)
+	}
+	return nil
+}
+
+// Format returns a new *CSV formatted per format from source *CSV c
+func (c *CSV) Format(format string) *CSV {
+	rv := NewCSV()
+
+	splitFormat := strings.Split(format, ",")
+
+	// set up rv header
+	for i, head := range splitFormat {
+		rv.header[i] = head
+	}
+	for _, rvr := range c.rows {
+		r := make(row)
+		for i, column := range splitFormat {
+			if column == "" {
+				r[rv.header[i]] = ""
+			} else {
+				r[rv.header[i]] = rvr[rv.header[i]]
+			}
+		}
+		rv.rows = append(rv.rows, r)
+	}
+	return rv
+}
+
+// DeDup de duplicates the dupes and returns a nice deduplicated *CSV and is possibly done in an LTO way rn
+func (c *CSV) DeDup() *CSV {
+	rv := NewCSV()
+	rv.header = c.header
+
+	foundMap := make(map[string]bool)
+	for _, r := range c.rows {
+		var rStr string
+		for i := 0; i < len(r); i++ {
+			rStr = rStr + r[c.header[i]]
+		}
+		if !foundMap[rStr] {
+			foundMap[rStr] = true
+			rv.rows = append(rv.rows, r)
+		}
+	}
+	return rv
+}
+
+func (c *CSV) Write(w *csv.Writer) error {
+	// get rows to [][]string
+	var writeRows [][]string
+	for _, row := range c.rows {
+		var strRow []string
+		for i := 0; i < len(c.header); i++ {
+			strRow = append(strRow, row[c.header[i]])
+		}
+		writeRows = append(writeRows, strRow)
+	}
+
+	// write
+	w.WriteAll(writeRows)
+
+	if err := w.Error(); err != nil {
+		return err
 	}
 	return nil
 }

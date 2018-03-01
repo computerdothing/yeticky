@@ -58,6 +58,11 @@ var csvCmd = &cobra.Command{
 		}
 		defer of.Close()
 
+		// If there's a header, stick it on the output CSV
+		if HasHeader {
+			oc.Header2Row()
+		}
+
 		// write our final joint to the outfile
 		if err = oc.Write(csv.NewWriter(of)); err != nil {
 			fmt.Println("Error writing to outfile %s : %s", outfile, err.Error())

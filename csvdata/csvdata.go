@@ -22,6 +22,15 @@ func NewCSV() *CSV {
 	return &CSV{header: make(map[int]string)}
 }
 
+// Header2Row adds the CSV header as the 1st row of rows
+func (c *CSV) Header2Row() {
+	var r row
+	for i := 0; i < len(c.header); i++ {
+		r[c.header[i]] = c.header[i]
+	}
+	c.rows = append([]row{r}, c.rows)
+}
+
 // ReadAll reads in everything from a provided csv.Reader csvr, if hasHeader is true, treats first
 // line as header and uses header for key in row (blank headers get column number as string as key),
 // if false will just use column number as string for key

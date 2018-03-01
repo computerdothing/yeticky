@@ -28,7 +28,7 @@ func (c *CSV) Header2Row() {
 	for i := 0; i < len(c.header); i++ {
 		r[c.header[i]] = c.header[i]
 	}
-	c.rows = append([]row{r}, c.rows)
+	c.rows = append([]row{r}, c.rows...)
 }
 
 // ReadAll reads in everything from a provided csv.Reader csvr, if hasHeader is true, treats first
